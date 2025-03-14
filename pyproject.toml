@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "wp-wv-project-ms"
+version = "0.1.0"
+description = "MicroService to handle Project based functionalities in WindVista V2"
+authors = ["muzaffar-sirpi <129746616+muzaffar-sirpi@users.noreply.github.com>"]
+readme = "README.md"
+packages = [{include = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = {extras = ["standard"], version = "^0.115.8"}
+sqlalchemy = "^2.0.38"
+pydantic-settings = "^2.7.1"
+coloredlogs = "^15.0.1"
+redis = "^5.2.1"
+requests = "^2.32.3"
+pymysql = "^1.1.1"
+pyjwt = "^2.10.1"
+
+
+[tool.poetry.scripts]
+api = "src.cli:start"
+dev = "src.cli:dev_mode"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
