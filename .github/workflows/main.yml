@@ -1,0 +1,54 @@
+name: Deploy to SSDNodes
+
+on:
+  push:
+    branches:
+      - main  # Change from 'dev' to 'main'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: Install Dependencies
+        run: |
+          pip install poetry
+          poetry install
+
+      - name: Build Docker Image
+        run: |
+          docker build -t wp-wv-project-ms .
+
+      - name: Save Docker Image
+        run: |
+          docker save wp-wv-project-ms | gzip > wp-wv-project-ms.tar.gz
+
+      - name: Copy Docker Image to Server
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+          SERVER_USER: ubuntu
+        run: |
+          echo "$SSH_PRIVATE_KEY" > private_key && chmod 600 private_key
+          scp -o StrictHostKeyChecking=no -i private_key wp-wv-project-ms.tar.gz $SERVER_USER@$SERVER_IP:/home/ubuntu/wp-wv-project-ms.tar.gz
+
+      - name: Deploy on SSDNodes
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+          SERVER_USER: ubuntu
+        run: |
+          ssh -o StrictHostKeyChecking=no -i private_key $SERVER_USER@$SERVER_IP << 'EOF'
+            docker load < /home/ubuntu/wp-wv-project-ms.tar.gz
+            docker stop wp-wv-project-ms || true
+            docker rm wp-wv-project-ms || true
+            docker run -d --name wp-wv-project-ms -p 8000:8000 wp-wv-project-ms
+          EOF
